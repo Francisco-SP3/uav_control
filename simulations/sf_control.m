@@ -6,70 +6,75 @@ close all;
 clear;
 clc;
 
-%% State definition
+%% Drone parameters
 
-d = [0; 0; 0]; % Lineal position [x; y; z]
-v = [0; 0; 0]; % Lineal velocity [u; v; w]
-theta = [0; 0; 0]; % Angular position [phi; theta; psi]
-omega = [0; 0; 0]; % Angular velocity [p; q; r]
-R_1 = 0; % Rotation matrix
-R_2 = 0; % Kinematic operator
-g = [0; 0; 9.81]; % Gravity vector [g_x; g_y; g_z]
-m = 1; % Mass [kg]
-f = [0; 0; 0]; % External forces vector [f_x; f_y; f_z]
-tau = [0; 0; 0]; % External torques vector [tau_x; tau_y; tau_z]
-I = diag([1, 1, 1]); % Inertia tensor [I_xx, I_yy, I_zz]
+m = 0.068; % Mass {kg}
+g = 9.81; % Gravity {m/s^2}
+I_xx = 0.0686*exp(-3); % Inertia in x {kg*m^2}
+I_yy = 0.092*exp(-3); % Inertia in y {kg*m^2}
+I_zz = 0.1366*exp(-3); % Inertia in z {kg*m^2}
+k_t = 0.0107; % Thrust coefficient {N*s^2}
+t = linspace(0,70,1000); % Time {s}
 
-%% Linearized model
+% Initial conditions
+x = zeros(12,1); % State vector
 
-% a3x3 matrix
-a3x3 = [g(1,3)*cos(psi_0), g(1,3)*sin(psi_0), 0;
-        g(1,3)*sin(psi_0), -g(1,3)*cos(psi_0), 0;
-        0, 0, 0];
+% State at hover
+x_bar = zeros(12,1); % State vector
+x_bar(5) = 2; % Initial z position
+
+% Control
+omega = sqrt(m*g/(4*k_t)); % Angular velocity {rad/s}
+u_bar = [omega; omega; omega; omega]; % Control vector
+
+% Desired trajectory
+x_r = 2*cos(0.2*t); % Desired x position
+y_r = 2*sin(0.2*t); % Desired y position
+z_r = 0.2*t; % Desired z position
+psi_r = 0; % Desired psi position
+
+%% Space state model
 
 % State matrix
-A = [zeros(3), eye(3), zeros(3,6);
-     zeros(3,6), a3x3, zeros(3);
-     zeros(3), zeros(3,6), eye(3);
-     zeros(3), zeros(3,6), zeros(3)];
+A = zeros(12,12);
+A(1,2) = 1; % x
+A(2,9) = g; % x_dot
+A(3,4) = 1; % y
+A(4,7) = -g; % y_dot
+A(5,6) = 1; % z
+A(7,8) = 1; % phi
+A(9,10) = 1; % theta
+A(11,12) = 1; % psi
 
 % Input matrix
-B  = [zeros(4,5);
-      1/m, 0, 0, 0;
-      zeros(1,3), I];
+B = zeros(12,4);
+B(6,1) = 1/m; % z_dot
+B(8,2) = 1/I_xx; % phi_dot
+B(10,3) = 1/I_yy; % theta_dot
+B(12,4) = 1/I_zz; % psi_dot
 
 % Output matrix
-C = zeros(4,12); % 4 outputs
+C = zeros(4,12);
 C(1,1) = 1; % x
 C(2,3) = 1; % y
 C(3,5) = 1; % z
-C(4,10) = 1; % psi
+C(4,11) = 1; % psi
 
-% Feedthrough matrix
-D = 0;
+% Analyze controllability
+C_ctr = ctrb(A,B);
+rank_ctr = rank(C_ctr);
 
-% Motor lift
-F = m*g(1,3)/4;
+% State feedback control
+P = [-11, -11, -9, -9, -7, -7, -8, -4, -15, -15, -3, -3]; % Desired poles
+K = place(A,B,P); % Control gain matrix
 
-% Linear acceleration
-% d_theta = theta(1,2) - theta_0;
-% d_phi = theta(1,1) - phi_0;
-% d_F = F - F_0;
-% xdd = g(1,3)*(d_theta*cos(theta(1,3)) + d_phi*sin(theta(1,3)));
-% ydd = g(1,3)*(d_theta*sin(theta(1,3)) - d_phi*cos(theta(1,3)));
-% zdd = d_F;
+% Closed loop matrix
+A_c = A - B*K;
 
-% Angular acceleration
-% pd = tau(1,1)/I(1,1) * (F_1 - F_4);
-% qd = tau(1,2)/I(2,2) * (F_3 - F_1);
-% rd = tau(1,3)/I(3,3) * (F_1 - F_2 + F_3 - F_4);
+% Evaluate the system
+%sys = ss(A_c,B,C,0);
+%[y,t,x] = lsim(sys,zeros(size(t)),t,x_bar);
 
-%% State feedback control
-
-% Controller
-% r = 0; % Reference input (regulator)
-% u = r - K*x;
-% xd = (A - B*K)*x + B*r;
-
-
-
+% Plot
+plot3(x_r,y_r,z_r)
+grid on
