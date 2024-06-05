@@ -38,14 +38,23 @@ tello.takeoff()
 period = 30
 time_delta = period / 360
 
-print("Starting circle")
-for i in range(360):
-    tello.send_rc_control(0, 25, 0, 35)
-    time.sleep(time_delta)
+print("Starting movement")
+#tello.send_rc_control(20, 0, 0, 0)
+#time.sleep(3)
+#print("Starting turn")
+#tello.send_rc_control(0, 0, 0, 20)
+#time.sleep(3)
+#for i in range(360):
+#    tello.send_rc_control(-20, 0, 0, 20)
+#    time.sleep(time_delta)
+
+tello.send_rc_control(-20, 0, 0, 50)
+print("Ended movement")
+time.sleep(10)
 
 print("Stopping")
 tello.send_rc_control(0, 0, 0, 0)
-time.sleep(1)
+time.sleep(3)
 
 keepRecording = False
 recorder.join()
