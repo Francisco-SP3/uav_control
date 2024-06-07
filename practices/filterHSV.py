@@ -2,7 +2,8 @@ from djitellopy import Tello
 import cv2
 import argparse
 
-initial_parameters = [80, 95, 100, 255, 60, 215]
+initial_parameters = [25, 45, 90, 180, 40, 255] # low_H, high_H, low_S, high_S, low_V, high_V
+#[80, 95, 100, 255, 60, 215]
 
 max_value = 255
 max_value_H = 360//2
@@ -94,11 +95,12 @@ while True:
  if frame is None:
   break
 
+ frame_RGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
  frame_HSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
  frame_threshold = cv2.inRange(frame_HSV, (low_H, low_S, low_V), (high_H, high_S, high_V))
  
  
- cv2.imshow(window_capture_name, frame)
+ cv2.imshow(window_capture_name, frame_RGB)
  cv2.imshow(window_detection_name, frame_threshold)
  
  key = cv2.waitKey(30)

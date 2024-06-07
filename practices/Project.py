@@ -3,10 +3,18 @@ import math
 import time
 import cv2
 from threading import Thread
+import circleDetection
 
+# Parameters
 
+# Variables
+firstFrame = True
+
+# Desired 
+a
+
+# Initialize the Tello object
 tello = Tello()
-
 print("Connecting to Tello")
 tello.connect()
 
@@ -20,7 +28,12 @@ def thread_func():
     try:
         while keepRecording:
             frame = frame_reader.frame
-            filter = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            if firstFrame:
+                (h, w, _) = frame.shape
+                im_center = (w//2, h//2)
+                firstFrame = False
+            frame_RGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame, frame_treshold, center, distance = circleDetection.circleDetection(frame, frame_RGB)
             cv2.imshow("Tello Camera Filtered", filter)
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
@@ -35,19 +48,9 @@ recorder.start()
 print("Taking off")
 tello.takeoff()
 
-period = 30
-time_delta = period / 360
+
 
 print("Starting movement")
-#tello.send_rc_control(20, 0, 0, 0)
-#time.sleep(3)
-#print("Starting turn")
-#tello.send_rc_control(0, 0, 0, 20)
-#time.sleep(3)
-#for i in range(360):
-#    tello.send_rc_control(-20, 0, 0, 20)
-#    time.sleep(time_delta)
-
 tello.send_rc_control(-20, 0, 0, 50)
 print("Ended movement")
 time.sleep(10)

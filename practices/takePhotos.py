@@ -3,7 +3,7 @@ from djitellopy import Tello
 import sys, os, cv2
 
 # Path to the folder where the photos will be saved
-path = "vision/chessboard_drone"
+path = "practices/chessboard_drone"
 
 # Create the folder if it does not exist
 if not os.path.exists(path):
