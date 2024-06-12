@@ -3,31 +3,6 @@ import numpy as np
 import sys, cv2
 from Circle import Circle
 
-# Parameters
-hsv_parameters = [25, 45, 90, 180, 40, 255] # Color filter parameters
-hough_params = [50, 10, 15, 150] # Hough Circle Transform parameters [param1, param2, minRadius, maxRadius]
-erodeI = 1 # Erode iterations
-dilateI = 1 # Dilate iterations
-blurI = 3 # Blur iterations
-max_lenC = 5 # Center memory length for Mean Filter
-max_lenR = 10 # Radius memory length for Mean Filter
-ballD = 100 # Ball diameter [mm]
-camera_matrix = [[ 908.2856024835826 ,  0.0 ,  482.87858112836204 ], [ 0.0 ,  901.8162522058758 ,  333.0625329073474 ], [ 0.0 ,  0.0 ,  1.0 ]]
-
-# Mean Filter variables
-center_memory = [None] * max_lenC
-radius_memory = [None] * max_lenR
-lenC = 0
-lenR = 0
-j = 0
-k = 0
-
-# Camera variables
-f_x = camera_matrix[0][0] # Focal length in x
-f_y = camera_matrix[1][1] # Focal length in y
-f = (f_x + f_y) / 2 # Focal length
-numD = ballD * f # Numerator of the distance calculation
-
 # Connect to the drone
 tello = Tello()
 print("Connecting to Tello")
@@ -36,105 +11,6 @@ tello.connect()
 # Start the video stream
 print("Starting video stream")
 tello.streamon()
-
-def filter(center, radius):
- global center_memory
- global radius_memory
- global lenC
- global lenR
- global j
- global k
- resultC = (0, 0)
- resultR = 0
- acumC1 = 0
- acumC2 = 0
- acumR = 0
-
- print(j)
- center_memory[j] = center
- radius_memory[k] = radius
-
- if lenC < max_lenC:
-  lenC = lenC + 1
-
- if lenR < max_lenR:
-  lenR = lenR + 1
-
- for i in range(lenC):
-  acumC1 += center_memory[i][0]
-  acumC2 += center_memory[i][1]
- resultC = (int(acumC1 / lenC), int(acumC2 / lenC))
- j = j + 1
-
- for i in range(lenR):
-  acumR += radius_memory[i]
- resultR = int(acumR / lenR)
- k = k + 1
-
- if j >= max_lenC:
-  j = 0
-
- if k >= max_lenR:
-  k = 0
-
- return resultC, resultR
-
-def circleDetection(frame, frame_RGB):
- # Initialize the circle parameters
- filter_center = (0, 0)
- distance = 0
-
- # Preprocess the frame
- frame_HSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
- frame_threshold = cv2.inRange(frame_HSV, (hsv_parameters[0], hsv_parameters[2], hsv_parameters[4]), (hsv_parameters[1], hsv_parameters[3], hsv_parameters[5]))
- frame_erode = cv2.erode(frame_threshold, None, iterations=erodeI)
- frame_dilate = cv2.dilate(frame_erode, None, iterations=dilateI)
- frame_blur = cv2.medianBlur(frame_dilate, blurI)
- 
- # Apply the Hough Circle Transform
- rows = frame_blur.shape[0]
- circles = cv2.HoughCircles(frame_blur, cv2.HOUGH_GRADIENT, 1, rows / 8,
- param1=hough_params[0], param2=hough_params[1],
- minRadius=hough_params[2], maxRadius=hough_params[3])
- # Draw the circles
- if circles is not None:
-  circles = np.uint16(np.around(circles))
-  for i in circles[0, :]:
-   # Circle center and radius
-   center = (i[0], i[1])
-   radius = i[2]
-   # Filter the center and radius
-   filter_center, filter_radius = filter(center, radius)
-   # Draw the circle
-   cv2.circle(frame_RGB, filter_center, 1, (0, 100, 100), 3)
-   cv2.circle(frame_RGB, filter_center, filter_radius, (255, 0, 255), 3)
-  # Draw distance from circle to center
-  frame_RGB = center2circle(frame_RGB, center)
-  # Calculate distance from camera to circle
-  frame_RGB, distance = camera2circle(frame_RGB, radius)
- 
- return frame_RGB, frame_blur, filter_center, distance
-
-def center2circle(frame, center):
- if(center != (0, 0)):
-  # Calculate center distance
-  (h, w, _) = frame.shape
-  im_center = (w//2, h//2)
-  print(im_center)
-  # Draw the center and the distance
-  cv2.circle(frame, im_center, 1, (0, 100, 100), 3)
-  cv2.arrowedLine(frame, center, im_center, (0, 0, 255), 3)
- return frame
-
-def camera2circle(frame, radius):
- if(radius != 0):
-  # Calculate the camera distance
-  distance = numD / (2*radius) # Distance in [mm]
-  # Print the distance
-  cv2.putText(frame, "Distance: " + str(distance) + " mm", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
- else:
-  distance = 0
- return frame, distance
 
 def main(argv):
  
@@ -153,8 +29,8 @@ def main(argv):
 
   # Apply the circle detection
   frame_RGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-  frame, frame_treshold, center, distance = circleDetection(frame, frame_RGB)
-  #frame, frame_treshold, center, distance = ball.circleDetection(frame, frame_RGB)
+  #frame, frame_treshold, center, distance = circleDetection(frame, frame_RGB)
+  frame, frame_treshold, center, distance = ball.circleDetection(frame, frame_RGB)
 
   # Display the resulting frame
   cv2.imshow('Circle Detection', frame_RGB)
@@ -167,5 +43,4 @@ def main(argv):
 
 if __name__ == "__main__":
  main(sys.argv[1:])
-
- # Comment 3
+  

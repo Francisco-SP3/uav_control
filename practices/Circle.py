@@ -6,10 +6,10 @@ class Circle:
     def __init__(self, ballD):
         # Parameters
         self.ballD = ballD # Ball diameter [mm]
-        self.hsv_parameters = [25, 45, 90, 180, 40, 255] # Color filter parameters
-        self.hough_params = [50, 10, 15, 150] # Hough Circle Transform parameters [param1, param2, minRadius, maxRadius]
-        self.erodeI = 1 # Erode iterations
-        self.dilateI = 1 # Dilate iterations
+        self.hsv_parameters = [30, 45, 110, 160, 60, 180] # Color filter parameters
+        self.hough_params = [20, 10, 15, 150] # Hough Circle Transform parameters [param1, param2, minRadius, maxRadius]
+        self.erodeI = 3 # Erode iterations
+        self.dilateI = 7 # Dilate iterations
         self.blurI = 3 # Blur iterations
         self.max_lenC = 5 # Center memory length for Mean Filter
         self.max_lenR = 10 # Radius memory length for Mean Filter
@@ -32,6 +32,7 @@ class Circle:
 
 
     def filter(self, center, radius):
+        
         resultC = (0, 0)
         resultR = 0
         acumC1 = 0
@@ -69,6 +70,7 @@ class Circle:
     def circleDetection(self, frame, frame_RGB):
         filter_center = (0, 0)
         distance = 0
+        circle_big = (0, 0, 0)
 
         frame_HSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         frame_threshold = cv2.inRange(frame_HSV, (self.hsv_parameters[0], self.hsv_parameters[2], self.hsv_parameters[4]), (self.hsv_parameters[1], self.hsv_parameters[3], self.hsv_parameters[5]))
@@ -85,18 +87,20 @@ class Circle:
         if circles is not None:
             circles = np.uint16(np.around(circles))
             for i in circles[0, :]:
-                # Circle center and radius
-                center = (i[0], i[1])
-                radius = i[2]
-                # Filter the center and radius
-                filter_center, filter_radius = filter(center, radius)
-                # Draw the circle
-                cv2.circle(frame_RGB, filter_center, 1, (0, 100, 100), 3)
-                cv2.circle(frame_RGB, filter_center, filter_radius, (255, 0, 255), 3)
+                if i[2] > circle_big[2]:
+                    circle_big = i
+            # Circle center and radius
+            center = (circle_big[0], circle_big[1])
+            radius = circle_big[2]
+            # Filter the center and radius
+            filter_center, filter_radius = self.filter(center, radius)
+            # Draw the circle
+            cv2.circle(frame_RGB, filter_center, 1, (0, 100, 100), 3)
+            cv2.circle(frame_RGB, filter_center, filter_radius, (255, 0, 255), 3)
             # Draw distance from circle to center
-            frame_RGB = self.center2circle(self, frame_RGB, center)
+            frame_RGB = self.center2circle(frame_RGB, center)
             # Calculate distance from camera to circle
-            frame_RGB, distance = self.camera2circle(self, frame_RGB, radius)
+            frame_RGB, distance = self.camera2circle(frame_RGB, radius)
 
         return frame_RGB, frame_blur, filter_center, distance
     
