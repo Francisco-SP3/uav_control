@@ -2,7 +2,7 @@ from djitellopy import Tello
 import cv2
 import argparse
 
-initial_parameters = [25, 45, 90, 180, 40, 255] # low_H, high_H, low_S, high_S, low_V, high_V
+initial_parameters = [30, 45, 95, 160, 60, 180] # low_H, high_H, low_S, high_S, low_V, high_V
 #[80, 95, 100, 255, 60, 215]
 
 max_value = 255

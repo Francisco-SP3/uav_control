@@ -6,7 +6,7 @@ class Circle:
     def __init__(self, ballD):
         # Parameters
         self.ballD = ballD # Ball diameter [mm]
-        self.hsv_parameters = [30, 45, 110, 160, 60, 180] # Color filter parameters
+        self.hsv_parameters = [30, 45, 95, 160, 60, 180] # Color filter parameters
         self.hough_params = [20, 10, 15, 150] # Hough Circle Transform parameters [param1, param2, minRadius, maxRadius]
         self.erodeI = 3 # Erode iterations
         self.dilateI = 7 # Dilate iterations
